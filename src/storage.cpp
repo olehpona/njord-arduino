@@ -1,40 +1,37 @@
-#include <storage.h++>
+#include <storage.hpp>
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <stdlib.h>
 #include <vector>
-#include <SPIFFS.h>
 #include <config.h>
+#include <saver.h>
 
 void GlobalStorage::dump(){
     JsonDocument doc;
-    JsonArray arr;
+    JsonArray arr = doc.createNestedArray("ports");
     for (int i : port_config) {
         arr.add(i);
     }
-    doc["ports"] = arr;
-    File storage = SPIFFS.open(STORAGE_FILE, "w");
-    serializeMsgPack(doc, storage);
-    storage.close();
+    dumpData(doc);
 }
 
 bool GlobalStorage::load(){
-    JsonDocument doc;
-    File storage = SPIFFS.open(STORAGE_FILE, "r");
-    DeserializationError err = deserializeMsgPack(doc, storage);
-    storage.close();
-    if(err) {
+    auto result = loadData();
+
+    if(std::get<0>(result)) {
       return false;
     }
-    if(doc.containsKey("ports")){
-      for (int i : doc["ports"].as<JsonArray>()){
+
+    JsonDocument doc = std::get<1>(result);
+
+    if(!doc.containsKey("ports")){
+      return false;
+    }
+
+    for (int i : doc["ports"].as<JsonArray>()){
         port_config.push_back(i);
         values.push_back(INITIAL_VALUE);
-      }
-      return true;
-    }else {
-      return false;
-    }    
+    }
+    return true;  
 }
 
 CommandStorage::~CommandStorage() {
@@ -98,4 +95,11 @@ String CommandStorage::operator[] (int index) {
     } else {
         return "";
     }
+}
+
+bool CommandStorage::hasIndex(int index) {
+    if (index >= 0 && index <= getDataLength()) {
+        return true;
+    }
+    return false;
 }

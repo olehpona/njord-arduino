@@ -36,4 +36,5 @@ class CommandStorage {
     void clear();
 
     String operator[] (int index);
+    bool hasIndex(int index);
 };
