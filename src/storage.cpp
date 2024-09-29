@@ -5,40 +5,61 @@
 #include <config.h>
 #include <saver.h>
 
-void GlobalStorage::dump(){
-    JsonDocument doc;
-    JsonArray arr = doc.createNestedArray("ports");
-    for (int i : port_config) {
-        arr.add(i);
-    }
-    dumpData(doc);
+void GlobalStorage::dumpFile(){
+    dumpData(getJson());
 }
 
-bool GlobalStorage::load(){
+bool GlobalStorage::loadFile(){
     auto result = loadData();
 
-    if(std::get<0>(result)) {
+    if(!std::get<0>(result)) {
       return false;
     }
 
     JsonDocument doc = std::get<1>(result);
 
-    if(!doc.containsKey("ports")){
+    return loadJson(doc);
+}
+
+bool GlobalStorage::loadJson(JsonDocument doc){
+    if(!doc.containsKey("ports") && !doc.containsKey("update_time")){
       return false;
     }
 
-    for (int i : doc["ports"].as<JsonArray>()){
-        port_config.push_back(i);
-        values.push_back(INITIAL_VALUE);
+    for (int i : doc["default_values"].as<JsonArray>()){
+        default_values.push_back(i);
     }
+
+    JsonArray ports = doc["ports"].as<JsonArray>();
+
+    for (int i = 0; i < ports.size(); i++){
+        port_config.push_back(ports[i]);
+        values.push_back(default_values[i]);
+    }
+    update_time = doc["update_time"];
     return true;  
+}
+
+void GlobalStorage::loadDefault(){
+    StaticJsonDocument<120> doc;
+    deserializeJson(doc, DEFAULT_CONFIG);
+    loadJson(doc);
+}
+
+JsonDocument GlobalStorage::getJson(){
+    JsonDocument doc;
+    JsonArray arr = doc.createNestedArray("ports");
+    for (int i : port_config) {
+        arr.add(i);
+    }
+    return doc;
 }
 
 CommandStorage::~CommandStorage() {
     clear();
 }
 
-String CommandStorage::getComString() {
+String CommandStorage::getCom() {
     return com;
 }
 
@@ -89,7 +110,7 @@ void CommandStorage::clear() {
 
 String CommandStorage::operator[] (int index) {
     if (index == 0) {
-        return getComString();
+        return getCom();
     } else if (index > 0 && index <= getDataLength()) {
         return getDataElement(index - 1);
     } else {

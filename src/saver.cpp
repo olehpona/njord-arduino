@@ -17,7 +17,7 @@ std::tuple<bool, JsonDocument> loadData(){
     File storage = SPIFFS.open(STORAGE_FILE, "r");
     DeserializationError err = deserializeMsgPack(doc, storage);
     storage.close();
-    if(!err) {
+    if(err.code() == DeserializationError::Ok) {
         status = true;
     }
     return {status, doc};

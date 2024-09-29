@@ -8,9 +8,15 @@
 struct GlobalStorage {
   std::vector<int> port_config;
   std::vector<int> values;
+  std::vector<int> channels;
+  std::vector<int> default_values;
+  int update_time = 0;
 
-  void dump();
-  bool load();
+  void dumpFile();
+  bool loadFile();
+  bool loadJson(JsonDocument doc);
+  void loadDefault();
+  JsonDocument getJson();
 };
 
 
@@ -22,8 +28,7 @@ class CommandStorage {
   public:
     ~CommandStorage();
 
-    char* getCom();
-    String getComString();
+    String getCom();
     int getComLength();
     void setCom(String newCom);
 

@@ -5,9 +5,13 @@
 extern GlobalStorage data;
 extern CommandStorage command;
 
-void setupHandler();
-void setHandler();
-void statusHandler();
-void defaultHandler();
+void setupPortsHandler();
+void setValueHandler();
+void portStatusHandler();
+void getDefaultConfigHandler();
+void getConfigHandler();
+void setDefaultValueHandler();
+void setUpdateTimeHandler();
+void boardInfoHandler();
 
 void handleCommand();

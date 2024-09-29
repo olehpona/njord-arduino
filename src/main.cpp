@@ -1,30 +1,30 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <stdlib.h>
-#include <vector>
-#include <SPIFFS.h>
 #include <config.h>
 #include <storage.hpp>
 #include <errors.h>
+#include <commandsHandlers.h>
+#include <board.h>
+#include <SPIFFS.h>
+#include <messages.h>
 
 bool newCommand = false;
+
 
 GlobalStorage data;
 CommandStorage command;
 
 void setup() {
-  Serial.begin(BAUD_RATE);
-  SPIFFS.begin();
+  setupBoard();
 
-  for (int i : data.port_config){
-    pinMode(i, OUTPUT);
-  }
-
-  setCpuFrequencyMhz(10);
-
-  if (SPIFFS.exists(STORAGE_FILE) && !data.load()) {
+  if (SPIFFS.exists(STORAGE_FILE) && !data.loadFile()) {
     Serial.println(CONFIG_LOAD_ERROR);
+  } else {
+    data.loadDefault();
+    Serial.println(LOAD_DEFAULT_CONFIG_MSG);
   }
+
+  setupOutputs();
 }
 
 void readCommandFromSerial() {
@@ -33,30 +33,23 @@ void readCommandFromSerial() {
     JsonDocument doc;
     deserializeJson(doc, readed);
     if(!command.setFromJson(doc)){
-      Serial.println("Bad json");
+      Serial.println(BAD_JSON_ERROR);
     };
     newCommand = true;
   }
 }
 
-void setValues(){
-  for (int i = 0; i < data.values.size()-1; i++ ){
-    analogWrite(data.port_config[i], map(data.values[i], 0, 100, 0, 255));
-  }
-}
-
 void loop() {
+  writeOutputs();
   readCommandFromSerial();
   if (newCommand){
-    Serial.println(command.getComString());
+    Serial.println(command.getCom());
     Serial.print('\n');
     for (int i = 0; i < command.getDataLength(); i++){
       Serial.println(command.getDataElement(i));
     }
     newCommand = false;
+    handleCommand();
     command.clear();
   }
-
-  setValues();
-  delay(UPDATE_TIME);
 }
