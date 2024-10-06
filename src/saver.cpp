@@ -3,6 +3,8 @@
 #include <SPIFFS.h>
 #include <config.h>
 #include <tuple>
+#include <errors.h>
+#include <messages.h>
 
 void dumpData(JsonDocument doc){
     File file = SPIFFS.open(STORAGE_FILE, "w");
@@ -21,4 +23,12 @@ std::tuple<bool, JsonDocument> loadData(){
         status = true;
     }
     return {status, doc};
+}
+
+void loadStorage(){
+    if (!SPIFFS.exists(STORAGE_FILE) || !data.loadFile()) {
+        Serial.println(CONFIG_LOAD_ERROR);
+        data.loadDefault();
+        Serial.println(LOAD_DEFAULT_CONFIG_MSG);
+    }
 }

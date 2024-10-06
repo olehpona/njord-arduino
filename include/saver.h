@@ -6,5 +6,8 @@
 
 #define STORAGE_FILE F("/save.bin")
 
+extern GlobalStorage data;
+
 void dumpData(JsonDocument doc);
 std::tuple<bool, JsonDocument> loadData();
+void loadStorage();

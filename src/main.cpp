@@ -7,23 +7,16 @@
 #include <board.h>
 #include <SPIFFS.h>
 #include <messages.h>
+#include <saver.h>
 
 bool newCommand = false;
-
 
 GlobalStorage data;
 CommandStorage command;
 
 void setup() {
   setupBoard();
-
-  if (SPIFFS.exists(STORAGE_FILE) && !data.loadFile()) {
-    Serial.println(CONFIG_LOAD_ERROR);
-  } else {
-    data.loadDefault();
-    Serial.println(LOAD_DEFAULT_CONFIG_MSG);
-  }
-
+  loadStorage();
   setupOutputs();
 }
 
@@ -43,11 +36,6 @@ void loop() {
   writeOutputs();
   readCommandFromSerial();
   if (newCommand){
-    Serial.println(command.getCom());
-    Serial.print('\n');
-    for (int i = 0; i < command.getDataLength(); i++){
-      Serial.println(command.getDataElement(i));
-    }
     newCommand = false;
     handleCommand();
     command.clear();

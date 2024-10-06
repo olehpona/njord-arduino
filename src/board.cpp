@@ -3,10 +3,17 @@
 #include <storage.hpp>
 #include <config.h>
 #include <SPIFFS.h>
+#include <ArduinoJson.h>
+#include <messages.h>
+#include <errors.h>
 
 void setupBoard(){
     Serial.begin(BAUD_RATE);
-    SPIFFS.begin();
+    if (!SPIFFS.begin()){
+        Serial.println(generateStringResponse(ERR_CODE, SPIFFS_MOUNT_ERR));
+        SPIFFS.format();
+        SPIFFS.begin();
+    }
 
     setCpuFrequencyMhz(10);
 }
@@ -35,4 +42,13 @@ void writeOutputs(){
 
 void reloadOutputs(){
     ESP.restart();
+}
+
+JsonDocument getBoardInfo() {
+    JsonDocument doc;
+
+    doc[F("max_ports")] = MAX_PWM_CHANNEL_INDEX + 1;
+    doc[F("board_name")] = ESP.getChipModel();
+
+    return doc;
 }

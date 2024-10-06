@@ -22,36 +22,59 @@ bool GlobalStorage::loadFile(){
 }
 
 bool GlobalStorage::loadJson(JsonDocument doc){
-    if(!doc.containsKey("ports") && !doc.containsKey("update_time")){
+    if(!doc.containsKey(F("ports")) && !doc.containsKey(F("update_time"))){
       return false;
     }
 
-    for (int i : doc["default_values"].as<JsonArray>()){
-        default_values.push_back(i);
-    }
+    port_config.clear();
+    default_values.clear();
+    values.clear();
 
-    JsonArray ports = doc["ports"].as<JsonArray>();
+    JsonArray ports = doc[F("ports")].as<JsonArray>();
 
     for (int i = 0; i < ports.size(); i++){
         port_config.push_back(ports[i]);
-        values.push_back(default_values[i]);
     }
-    update_time = doc["update_time"];
+        
+    for (int i : doc[F("default_values")].as<JsonArray>()){
+        default_values.push_back(i);
+    }
+
+    //resizing default_values to ports_size
+    if (default_values.size() > port_config.size()) {
+        default_values.resize(port_config.size());
+    } else if (default_values.size() < port_config.size()) {
+        default_values.resize(port_config.size(), INITIAL_VALUE);
+    }
+
+    for (int i : default_values){
+        values.push_back(i);
+    }
+
+    update_time = doc[F("update_time")];
     return true;  
 }
 
 void GlobalStorage::loadDefault(){
-    StaticJsonDocument<120> doc;
+    JsonDocument doc;
     deserializeJson(doc, DEFAULT_CONFIG);
     loadJson(doc);
 }
 
 JsonDocument GlobalStorage::getJson(){
     JsonDocument doc;
-    JsonArray arr = doc.createNestedArray("ports");
+    JsonArray ports = doc[F("ports")].to<JsonArray>();
     for (int i : port_config) {
-        arr.add(i);
+        ports.add(i);
     }
+    JsonArray default_values_arr = doc[F("default_values")].to<JsonArray>();
+
+    for (int i : default_values){
+        default_values_arr.add(i);
+    }
+
+    doc["update_time"] = update_time;
+    
     return doc;
 }
 
@@ -87,11 +110,11 @@ int CommandStorage::getDataLength() {
 }
 
 bool CommandStorage::setFromJson(JsonDocument doc) {
-    if (doc.containsKey("command")) {
-        setCom(doc["command"].as<String>());
+    if (doc.containsKey(F("command"))) {
+        setCom(doc[F("command")].as<String>());
         
-        if (doc.containsKey("data")) {
-            JsonArray arr = doc["data"].as<JsonArray>();
+        if (doc.containsKey(F("data"))) {
+            JsonArray arr = doc[F("data")].as<JsonArray>();
             for (String element : arr) {
                 addDataElement(element);
             }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <storage.hpp>
+#include <ArduinoJson.h>
 
 extern GlobalStorage data;
 extern CommandStorage command;
@@ -15,3 +16,5 @@ void setupOutputs();
 void writeOutputs();
 
 void reloadOutputs(); // Update pins that will be used as output
+
+JsonDocument getBoardInfo();
